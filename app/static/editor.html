@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Editor de landing</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/grapesjs@0.22.16/dist/css/grapes.min.css">
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#2a2f3a;--tx:#e8eaf0;--mut:#9aa3b2;--ac:#e07a53;--ok:#2fb36d;--bad:#e5484d}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+.top{height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.top a.back{color:var(--mut);text-decoration:none;white-space:nowrap}.top a.back:hover{color:var(--tx)}
+.top h1{font-size:15px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--mut);padding:7px 11px;cursor:pointer;font:inherit}
+.seg button[aria-pressed=true]{background:var(--line);color:var(--tx)}
+button.ic{background:none;border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit}
+button.save{background:var(--ac);border:0;color:#1b0f0a;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer;font:inherit;font-weight:700}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,a:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+#status{color:var(--mut);font-size:13px;white-space:nowrap;max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+#status.ok{color:var(--ok)}#status.bad{color:var(--bad)}
+#gjs{height:calc(100vh - 52px)}
+.help{position:fixed;left:14px;bottom:14px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--mut);font-size:12px;max-width:340px}
+.help b{color:var(--tx)}
+.gjs-one-bg{background-color:var(--panel)}.gjs-two-color{color:var(--tx)}.gjs-four-color,.gjs-four-color-h:hover{color:var(--ac)}
+@media (max-width:760px){.top{gap:6px;padding:0 8px}.top h1,.help,#devs{display:none}#status{max-width:40vw}}
+</style>
+</head>
+<body>
+<div class="top">
+ <a class="back" href="/" id="back">← Panel</a>
+ <h1 id="title">Cargando…</h1>
+ <div class="seg" id="devs" role="group" aria-label="Dispositivo">
+  <button data-d="Escritorio" aria-pressed="true">Escritorio</button><button data-d="Tablet" aria-pressed="false">Tablet</button><button data-d="Movil" aria-pressed="false">Móvil</button>
+ </div>
+ <button class="ic" id="undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶</button>
+ <button class="ic" id="redo" title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer">↷</button>
+ <a class="ic" id="view" target="_blank" rel="noopener" style="text-decoration:none;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 10px">Ver publicada ↗</a>
+ <span id="status" role="status" aria-live="polite"></span>
+ <button class="save" id="save" disabled>Guardar y publicar</button>
+</div>
+<div id="gjs"></div>
+<div class="help" id="help"><b>Cómo editar:</b> doble clic en un texto para escribir · arrastra bloques desde ▦ (derecha) · selecciona un elemento y cambia colores y tamaños en 🖌. Al guardar se vuelven a pasar SEO y conversión, y queda una copia para deshacer desde el panel.
+ <button class="ic" style="margin-top:6px;font-size:12px;padding:3px 8px" onclick="this.parentNode.remove()">Entendido</button></div>
+
+<script>window.exports={};</script>
+<script src="https://cdn.jsdelivr.net/npm/grapesjs@0.22.16/locale/es.js"></script>
+<script>const ES=window.exports.default;delete window.exports;</script><!-- sin esto, GrapesJS se registraria en exports y no en window -->
+<script src="https://cdn.jsdelivr.net/npm/grapesjs@0.22.16/dist/grapes.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const slug=location.pathname.split('/').filter(Boolean).pop();
+let editor=null,saving=false;
+const say=(t,cls='')=>{$('status').textContent=t;$('status').className=cls};
+
+async function boot(){
+  $('view').href='/p/'+slug;$('back').href='/#'+slug;
+  const r=await fetch('/api/landings/'+slug+'/editor');
+  if(!r.ok){say('No se pudo cargar la landing','bad');return}
+  const d=await r.json();
+  $('title').textContent=d.title;document.title='Editor · '+d.title;
+  try{editor=grapesjs.init({
+    container:'#gjs',height:'100%',fromElement:false,storageManager:false,
+    components:d.html,style:d.css,
+    canvas:{styles:d.styles},
+    i18n:{locale:'es',detectLocale:false,messages:{es:ES}},
+    plugins:[window['gjs-blocks-basic']].filter(Boolean).map(p=>p.default||p),
+    pluginsOpts:{},
+    deviceManager:{devices:[
+      {id:'Escritorio',name:'Escritorio',width:''},
+      {id:'Tablet',name:'Tablet',width:'768px',widthMedia:'992px'},
+      {id:'Movil',name:'Móvil',width:'390px',widthMedia:'480px'}]},
+    assetManager:{assets:[1,2,3,4].map(i=>'/a/'+slug+'/img'+i+'.jpg').concat(['/a/'+slug+'/logo.png'])},
+  });}catch(e){console.error(e);say('El editor no pudo iniciar: '+e.message,'bad');return}
+  editor.on('load',()=>{addFunnelBlocks();say('Listo para editar');$('save').disabled=false});
+  editor.on('update',()=>{if(!saving)say('Cambios sin guardar')});
+}
+
+// Bloques propios del embudo: usan las clases reales de la landing para heredar su diseño
+function addFunnelBlocks(){
+  const doc=editor.Canvas.getDocument();
+  const cta=[...doc.querySelectorAll('a,button')].find(el=>/btn|cta|button|boton/i.test(el.className||''));
+  const ctaCls=cta?String(cta.className).trim():'';
+  const ctaStyle=ctaCls?'':' style="display:inline-block;padding:16px 28px;border-radius:10px;background:#111;color:#fff;font-weight:700;text-decoration:none"';
+  const sec='style="padding:48px 20px;max-width:960px;margin:0 auto"';
+  const bm=editor.BlockManager,cat='Embudo';
+  bm.add('la-cta',{label:'Botón de compra',category:cat,media:'🛒',
+    content:'<div style="text-align:center;padding:24px"><a href="#form" class="'+ctaCls+'"'+ctaStyle+'>Quiero inscribirme ahora</a></div>'});
+  bm.add('la-testimonial',{label:'Testimonio',category:cat,media:'💬',
+    content:'<section '+sec+'><blockquote style="margin:0;padding:24px;border-left:4px solid currentColor;font-size:18px">"Escribe aquí lo que dijo un alumno real."<footer style="margin-top:10px;font-size:14px;opacity:.75">— Nombre, ciudad</footer></blockquote></section>'});
+  bm.add('la-guarantee',{label:'Garantía',category:cat,media:'🛡️',
+    content:'<section '+sec+'><div style="text-align:center;padding:28px;border:2px dashed currentColor;border-radius:14px"><h3 style="margin:0 0 8px">Garantía de 7 días</h3><p style="margin:0">Si no es para ti, te devolvemos el 100% sin preguntas.</p></div></section>'});
+  bm.add('la-bonus',{label:'Bonus',category:cat,media:'🎁',
+    content:'<section '+sec+'><h2 style="text-align:center">Bonus exclusivos</h2><ul style="font-size:17px;line-height:1.7"><li><b>Bonus 1:</b> descripción</li><li><b>Bonus 2:</b> descripción</li></ul></section>'});
+  bm.add('la-faq',{label:'Pregunta frecuente',category:cat,media:'❓',
+    content:'<details style="max-width:760px;margin:10px auto;padding:14px 18px;border:1px solid rgba(127,127,127,.35);border-radius:10px"><summary style="font-weight:700;cursor:pointer">¿Pregunta?</summary><p>Respuesta.</p></details>'});
+  bm.add('la-text',{label:'Sección de texto',category:cat,media:'📝',
+    content:'<section '+sec+'><h2>Título de la sección</h2><p style="font-size:18px;line-height:1.6">Escribe aquí el texto.</p></section>'});
+  bm.add('la-video',{label:'Video de venta (YouTube)',category:cat,media:'▶️',
+    content:{type:'video',provider:'yt',style:{width:'100%','max-width':'860px',height:'480px',margin:'0 auto',display:'block'}}});
+  // Abrir los bloques al empezar: es lo primero que se busca en un editor tipo Elementor
+  const open=editor.Panels.getButton('views','open-blocks');if(open)open.set('active',true);
+}
+
+document.querySelectorAll('#devs button').forEach(b=>b.onclick=()=>{
+  if(!editor)return;editor.setDevice(b.dataset.d);
+  document.querySelectorAll('#devs button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('undo').onclick=()=>editor&&editor.UndoManager.undo();
+$('redo').onclick=()=>editor&&editor.UndoManager.redo();
+
+$('save').onclick=async()=>{
+  if(!editor||saving)return;
+  saving=true;$('save').disabled=true;say('Guardando y re-auditando…');
+  try{
+    const r=await fetch('/api/landings/'+slug+'/html',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({html:editor.getHtml(),css:editor.getCss()})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:'No se pudo guardar');
+    const fails=d.conv_failed&&d.conv_failed.length?' · revisar: '+d.conv_failed.join(', '):'';
+    say('Publicada ✓ SEO '+d.seo_score+'/100 · conversión '+d.conv+fails,d.conv_failed&&d.conv_failed.length?'':'ok');
+    editor.getModel().set('changesCount',0);
+  }catch(e){say('Error: '+e.message,'bad')}
+  finally{saving=false;$('save').disabled=false}
+};
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();$('save').click()}});
+window.addEventListener('beforeunload',e=>{if(editor&&editor.getDirtyCount()>0){e.preventDefault();e.returnValue=''}});
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Landing Agent · Panel</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{--ink:#17202b;--mut:#566372;--line:#dde3ea;--soft:#eef1f5;--bg:#f4f6f8;--blue:#0b6bcb;--green:#17803d;--amber:#b77900;--red:#c02626;--violet:#6d3fc0}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+a{color:var(--blue)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:0;color:inherit}
+button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+textarea{width:100%;min-height:96px;padding:12px;font:inherit;border:1px solid #c5ccd4;border-radius:10px;resize:vertical}
+select,input[type=text],input[type=tel],input[type=url],input[type=number]{font:inherit;padding:8px 10px;border:1px solid #c5ccd4;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+.hint,small{font-size:12.5px;color:var(--mut)}
+
+/* cabecera y KPI */
+header{padding:12px 22px;background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}.brand i{font-style:normal;background:var(--blue);border-radius:8px;padding:2px 8px;font-size:13px}
+header nav{display:flex;gap:16px;font-size:14px;align-items:center;flex-wrap:wrap}header nav a{color:#cfe2f8}
+.switch{display:flex;align-items:center;gap:8px;font-size:13px;color:#cfe2f8;cursor:pointer}
+.switch input{appearance:none;width:34px;height:20px;border-radius:999px;background:#3b4756;position:relative;cursor:pointer;transition:background .2s;margin:0}
+.switch input:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.switch input:checked{background:#f0a400}.switch input:checked:before{left:17px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:16px 20px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}.kpi span{font-size:12.5px;color:var(--mut)}.kpi b{display:block;font-size:22px;letter-spacing:-.01em}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:520px){.kpis{grid-template-columns:1fr 1fr}}
+
+/* estructura */
+main{display:grid;grid-template-columns:390px minmax(0,1fr);gap:20px;padding:16px 20px 28px;align-items:start}
+@media(max-width:1000px){main{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:#fff;border-radius:12px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{font-size:16px;margin:0}
+details.opt{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+details.opt summary{cursor:pointer;font-weight:600}details.opt>div{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fields{display:flex;flex-direction:column;gap:6px}
+label{font-size:14px}
+.colors{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.colors label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+input[type=color]{width:100%;height:40px;padding:2px;border:1px solid #c5ccd4;border-radius:8px;background:#fff}
+#thumbs{display:flex;gap:6px;flex-wrap:wrap}#thumbs img{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+
+/* botones */
+.primary{background:var(--blue);color:#fff;padding:12px;font-weight:700}
+.primary:disabled,.sec:disabled,.ghost:disabled{opacity:.55;cursor:wait}
+.sec{background:var(--ink);color:#fff;padding:9px 14px;font-weight:600;white-space:nowrap}
+.ghost{background:var(--soft);padding:6px 11px;font-size:13.5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
+.ghost:hover,.chip:hover{background:#e0e6ed}.ghost[aria-pressed=true]{background:var(--ink);color:#fff}
+.chip{background:var(--soft);padding:8px 10px;text-align:left;font-size:13.5px}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.inline{display:flex;gap:8px}.inline input{flex:1;min-width:0}
+#status{font-size:14px;color:#3d4a59;min-height:21px}
+
+/* badges */
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--soft);color:#3d4a59;white-space:nowrap}
+.badge.good{background:#e7f6ec;color:#17663a}.badge.mid{background:#fff3dc;color:#8a5a00}.badge.bad{background:#fde8e8;color:#9b1c1c}.badge.ab{background:#e6f0fb;color:#0b4f96}
+
+/* lista de embudos */
+.item{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--soft);font-size:14px}
+.item.on{background:#f3f8fd;margin:0 -16px;padding:10px 16px}
+.item b{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.item .meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.legacy summary{cursor:pointer;font-size:13.5px;color:var(--mut);padding-top:8px;border-top:1px solid var(--soft)}
+
+/* equipo en vivo */
+.livehd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.livehd .clock{font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--mut)}
+.pulse{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--blue);margin-right:6px;animation:p 1s infinite alternate}
+@keyframes p{to{opacity:.25}}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1.15fr) 22px minmax(0,1fr);gap:6px;align-items:center}
+.flow .stack{display:flex;flex-direction:column;gap:6px}
+.arrow{text-align:center;color:#9aa6b2;font-size:18px}
+@media(max-width:820px){.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);line-height:1}}
+.ag{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fbfcfd;display:flex;flex-direction:column;gap:2px;transition:border-color .25s,background .25s,box-shadow .25s}
+.ag .hd{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px}.ag .em{font-size:17px}
+.ag .st{margin-left:auto;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;background:var(--soft);color:var(--mut);text-transform:uppercase;letter-spacing:.02em}
+.ag small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+.ag.s-trabajando,.ag.s-revisando,.ag.s-rehaciendo{border-color:var(--blue);background:#f3f8fd;box-shadow:0 0 0 3px #0b6bcb1f}
+.ag.s-trabajando .st{background:var(--blue);color:#fff}.ag.s-revisando .st{background:var(--violet);color:#fff}.ag.s-rehaciendo .st{background:#d18a00;color:#fff}
+.ag.s-listo .st{background:#e7f6ec;color:#17663a}.ag.s-error .st{background:#fde8e8;color:#9b1c1c}
+.ag.s-trabajando .em,.ag.s-revisando .em,.ag.s-rehaciendo .em{animation:p .8s infinite alternate}
+.rework{border:1px dashed #d18a00;background:#fff8ec;color:#7a5200;border-radius:10px;padding:8px 12px;font-size:13.5px}
+details.tr summary{cursor:pointer;font-size:13.5px;color:var(--mut)}
+.trace{list-style:none;margin:8px 0 0;padding:0;font-size:13.5px;max-height:52vh;overflow:auto}
+.trace li{display:grid;grid-template-columns:46px 230px minmax(0,1fr);gap:10px;align-items:start;padding:6px 0;border-top:1px solid var(--soft);animation:in .25s ease-out}
+.trace code{color:var(--mut);font-size:12px}
+.who{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center;min-width:0}.who .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;background:#e6f0fb;color:#0b4f96}
+.k-decision .k{background:#efe8fb;color:#5b2d9e}.k-check .k{background:#e7f6ec;color:#17663a}.k-warn .k,.k-error .k{background:#fde8e8;color:#9b1c1c}
+.k-done .k,.k-handoff .k{background:var(--ink);color:#fff}
+@media(max-width:700px){.trace li{grid-template-columns:44px 1fr}.trace li>span:last-child{grid-column:1/-1}}
+@keyframes in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.pulse,.ag .em,.trace li{animation:none!important}}
+
+/* resumen */
+.summary{border:1px solid #b9dcc5;background:#f2faf5}
+.summary h2{display:flex;align-items:center;gap:8px}
+.deltas{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:620px){.deltas{grid-template-columns:1fr 1fr}}
+.delta{background:#fff;border:1px solid #d5e9dc;border-radius:10px;padding:8px 10px}.delta span{font-size:12px;color:var(--mut)}.delta b{display:block;font-size:17px}
+
+/* detalle del embudo */
+.dethd{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.dethd h2{font-size:18px;margin:0 0 4px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;padding:9px 13px;border-radius:8px 8px 0 0;font-weight:600;color:var(--mut);border-bottom:2px solid transparent;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--blue)}
+.tabpanel{display:flex;flex-direction:column;gap:12px}
+.seg{display:inline-flex;background:var(--soft);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:none;padding:5px 10px;font-size:13px;border-radius:7px}.seg button[aria-pressed=true]{background:#fff;box-shadow:0 1px 2px #0002;font-weight:700}
+#frameWrap{background:#e9edf1;border-radius:10px;padding:10px;display:flex;justify-content:center}
+#frame{width:100%;height:72vh;min-height:520px;border:1px solid var(--line);border-radius:10px;background:#fff;transition:width .25s}
+#frame.m{width:390px;max-width:100%}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut);min-height:320px;text-align:center;padding:24px;gap:8px}
+.empty b{color:var(--ink);font-size:17px}
+
+/* chat */
+.chatlog{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;padding:2px}
+.msg{padding:9px 12px;border-radius:12px;max-width:92%;white-space:pre-wrap;font-size:14px}
+.msg.user{align-self:flex-end;background:var(--ink);color:#fff}.msg.assistant{align-self:flex-start;background:var(--soft)}
+.msg.step{align-self:flex-start;padding:0 4px;font-size:12.5px;color:var(--mut)}
+.chatempty{font-size:13.5px;color:var(--mut)}
+
+/* metricas */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{margin:0;font-size:14.5px}
+.mailed{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px}@media(max-width:900px){.mailed{grid-template-columns:1fr}}
+.mlist{display:flex;flex-wrap:wrap;gap:6px}.mlist button{font-size:12.5px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.mlist button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mprev{width:100%;height:560px;border:1px solid var(--line);border-radius:10px;background:#f4f5f7}
+.subj{font-size:13px;padding:8px 10px;background:var(--soft);border-radius:8px;overflow-wrap:anywhere}
+.live-btn{background:#e8f5ee;color:#0f6b3a;border:1px solid #bfe3cf;border-radius:9px;padding:7px 12px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+dialog#whDlg{border:0;border-radius:16px;padding:0;width:min(980px,96vw);max-height:92vh;box-shadow:0 20px 60px #0005}
+dialog#whDlg::backdrop{background:#0b0f14cc}
+.wh{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 2fr;gap:8px 12px}
+@media(max-width:700px){.wh{grid-template-columns:1fr}}
+.wh .full{grid-column:1/-1}.wh-ev{display:flex;flex-wrap:wrap;gap:6px 14px}.wh-ev label{display:flex;gap:6px;align-items:center;font-size:13px}
+.wh-h{display:grid;grid-template-columns:1fr 1.4fr;gap:6px}
+dialog#hmDlg{border:0;border-radius:16px;padding:0;width:min(1180px,96vw);max-height:92vh;box-shadow:0 20px 60px #0005}
+dialog#hmDlg::backdrop{background:#0b0f14cc}
+table.hm{width:100%;border-collapse:collapse;font-size:13px}table.hm th{text-align:left;color:#5b6573;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:#fff}
+table.hm td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.hm-ev{font-weight:700;white-space:nowrap}.hm-ok{color:#0f6b3a}.hm-bad{color:#b42318}.hm-test{color:#7a5a00}.hm-mut{color:#5b6573}
+.hm-f{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hm-f select,.hm-f input[type=search]{width:auto;min-width:150px;font-size:13px;padding:6px 8px}.hm-f input[type=search]{flex:1;min-width:180px}
+.hm-f label{display:flex;gap:6px;align-items:center;font-size:13px;white-space:nowrap;cursor:pointer}
+.hm-types{display:flex;flex-wrap:wrap;gap:6px}.hm-types button{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;white-space:nowrap}
+.hm-types button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hm-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:4px 0}
+.hm-k div{background:var(--soft);border-radius:10px;padding:8px 10px}.hm-k b{display:block;font-size:20px}.hm-k span{font-size:12px;color:#5b6573}
+.hm-st{display:inline-flex;gap:6px;align-items:flex-start;font-size:12.5px;line-height:1.35}
+.hm-tx{font-family:ui-monospace,monospace;font-size:11px;color:#5b6573}
+.hm-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#fff3c4;color:#7a5a00;margin-left:4px}
+code.cp{background:var(--soft);padding:6px 8px;border-radius:8px;display:block;overflow-wrap:anywhere;font-size:12.5px}
+dialog#liveDlg{border:0;border-radius:16px;padding:0;width:min(1040px,96vw);max-height:92vh;box-shadow:0 20px 60px #0005}
+dialog#liveDlg::backdrop{background:#0b0f14cc}
+.lv{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);min-height:560px}@media(max-width:820px){.lv{grid-template-columns:1fr}}
+.lv-qr{background:#0f1419;color:#fff;padding:28px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.lv-qr img{width:100%;max-width:300px;background:#fff;border-radius:14px;padding:10px}
+.lv-qr h2{margin:0;font-size:22px}.lv-qr small{opacity:.75;overflow-wrap:anywhere}
+.lv-feed{padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.lv-k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.lv-k div{background:var(--soft);border-radius:10px;padding:10px}
+.lv-k b{display:block;font-size:26px}.lv-k span{font-size:12px;color:var(--mut,#5b6573)}
+.lv-tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;overflow:auto;max-height:52vh}
+.lv-tl li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;animation:pop .45s ease-out}
+.lv-tl li.lead{border-color:#7cc89d;background:#f0faf4}.lv-tl li.buy{border-color:#e0b860;background:#fff8e6}
+.lv-tl li small{display:block;color:#5b6573;margin-top:2px}
+@keyframes pop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.lv-tl li{animation:none}}
+.lv-wait{color:#5b6573;font-size:14px;display:flex;gap:8px;align-items:center}
+.lv-wait i{width:9px;height:9px;border-radius:50%;background:#2fb36d;animation:pulse 1.4s infinite}@keyframes pulse{50%{opacity:.25}}
+.sw2{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer}
+.sw2 input{width:16px;height:16px;cursor:pointer}
+a.edit{background:var(--ink);color:#fff;text-decoration:none;padding:8px 14px;border-radius:9px;font-weight:700;font-size:13.5px;white-space:nowrap}
+.fun{display:flex;flex-direction:column;align-items:center;gap:2px}
+.fun .lvl{display:grid;grid-template-columns:130px 1fr 54px;gap:8px;align-items:center;width:100%;font-size:13.5px}
+.fun .bar{height:24px;border-radius:6px;background:linear-gradient(90deg,#0b6bcb,#3d8fe0);margin:0 auto;min-width:6px}
+.fun .conv{font-size:12px;color:var(--mut);padding-left:138px;width:100%}
+@media(max-width:520px){.fun .lvl{grid-template-columns:90px 1fr 40px}.fun .conv{padding-left:98px}}
+.money{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.money div{background:var(--soft);border-radius:8px;padding:8px}.money b{display:block;font-size:17px}
+.sec-row{display:grid;grid-template-columns:160px 1fr 34px;gap:8px;align-items:center;font-size:13px}
+.sbar{height:8px;background:var(--soft);border-radius:9px;overflow:hidden}.sbar i{display:block;height:100%;border-radius:9px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.vs div{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfcfd;font-size:13.5px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}.pills span{background:var(--soft);border-radius:6px;padding:3px 8px;font-size:13px}
+</style></head><body>
+<header>
+ <div class="brand">Landing Agent <i>equipo de agentes</i></div>
+ <nav>
+  <label class="switch" title="Para mostrar en vivo las secuencias: un dia de los emails dura un minuto (solo leads nuevos)">
+   <input type="checkbox" id="demoMode"> Emails en modo demo</label>
+  <a href="#" id="whBtn">🔗 Integraciones (CRM)</a><a href="#" id="hmBtn">💳 Hotmart</a><a href="/api/leads.csv">Leads (CSV)</a><a href="/sitemap.xml" target="_blank" rel="noopener">Sitemap</a><a href="/docs" target="_blank" rel="noopener">API</a>
+ </nav>
+</header>
+<div class="kpis">
+ <div class="kpi"><span>Embudos</span><b id="kL">0</b></div>
+ <div class="kpi"><span>Visitas</span><b id="kV">0</b></div>
+ <div class="kpi"><span>Leads</span><b id="kLe">0</b></div>
+ <div class="kpi"><span>Conversion a lead</span><b id="kC">—</b></div>
+ <div class="kpi"><span>Ingresos</span><b id="kR">0 USD</b></div>
+ <div class="kpi"><span>Costo de IA</span><b id="kU">0 USD</b></div>
+</div>
+<main>
+ <div class="col">
+  <section class="panel" aria-labelledby="hNew">
+   <h2 id="hNew">Nuevo embudo</h2>
+   <label for="p" class="hint">Describe el producto: que es, para quien, precio, garantia y CTA.</label>
+   <textarea id="p" placeholder="Ej: Curso de trading para principiantes, 197 USD, garantia 7 dias, CTA a lista de espera"></textarea>
+   <div class="two">
+    <div class="fields"><label for="fw"><strong>Framework</strong></label>
+     <select id="fw"><option value="">Auto (segun el avatar)</option><option value="PAS">PAS</option><option value="AIDA">AIDA</option><option value="StoryBrand">StoryBrand</option><option value="4P">4P</option></select></div>
+    <div class="fields"><label for="tono"><strong>Tono</strong></label>
+     <select id="tono"><option value="">Auto</option><option value="directo">Directo</option><option value="cercano">Cercano</option><option value="premium">Premium</option><option value="urgente">Urgencia honesta</option></select></div>
+   </div>
+   <details class="opt"><summary>Marca y diseno</summary><div>
+    <label><input type="checkbox" id="usePal"> Usar mi paleta de 3 colores</label>
+    <div class="colors">
+     <label>Principal<input type="color" id="c1" value="#0B6BCB"></label>
+     <label>Fondo<input type="color" id="c2" value="#F7F9FC"></label>
+     <label>Acento<input type="color" id="c3" value="#FF8A3D"></label>
+    </div>
+    <label for="logo"><strong>Logo</strong> <span class="hint">(PNG transparente)</span></label>
+    <input id="logo" type="file" accept="image/png,image/jpeg,image/webp">
+    <label for="imgs"><strong>Imagenes</strong> <span class="hint">(hasta 4; la primera se usa al compartir)</span></label>
+    <input id="imgs" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+    <div id="thumbs"></div>
+    <label for="wa"><strong>WhatsApp</strong> <span class="hint">(boton para escribirte)</span></label>
+    <input id="wa" type="tel" placeholder="584121234567 (con codigo de pais)">
+   </div></details>
+   <details class="opt"><summary>Links de pago</summary><div>
+    <span class="hint">Stripe Payment Links o Hotmart. Vacio = checkout de demostracion.</span>
+    <label for="ckM">Producto principal</label><input id="ckM" type="url" placeholder="https://buy.stripe.com/...">
+    <label for="ckU">Upsell</label><input id="ckU" type="url" placeholder="https://...">
+    <label for="ckD">Downsell</label><input id="ckD" type="url" placeholder="https://...">
+   </div></details>
+   <button class="primary" id="go">Generar con el equipo de agentes</button>
+   <div id="status" role="status"></div>
+   <div class="hint">Ejemplos</div>
+   <div class="col" style="gap:6px" id="examples">
+    <button class="chip">Curso online de fotografia con celular para emprendedores. Precio 97 USD, garantia 14 dias, CTA a inscripcion.</button>
+    <button class="chip">Mentoria grupal de 8 semanas para vender servicios freelance en dolares. Cupos limitados, 497 USD, CTA a lista de espera.</button>
+    <button class="chip">Ebook + plantilla de Notion para organizar las finanzas personales. 27 USD, descarga inmediata.</button>
+   </div>
+  </section>
+  <section class="panel" aria-labelledby="hList"><h2 id="hList">Mis embudos</h2><div id="list" class="hint">Aun no hay embudos.</div></section>
+ </div>
+
+ <div class="col">
+  <!-- equipo trabajando en vivo -->
+  <section class="panel" id="live" hidden aria-live="polite">
+   <div class="livehd"><strong id="liveTitle"></strong><span class="clock" id="clock"></span></div>
+   <div class="flow" id="flow"></div>
+   <div class="rework" id="rework" hidden></div>
+   <details class="tr" id="trWrap"><summary id="trSum">Traza completa</summary><ul class="trace" id="trace"></ul></details>
+  </section>
+
+  <!-- resumen al terminar -->
+  <section class="panel summary" id="summary" hidden></section>
+
+  <!-- detalle del embudo -->
+  <section class="panel" id="detail" hidden>
+   <div class="dethd">
+    <div><h2 id="dTitle"></h2><div class="row-actions" id="dBadges"></div></div>
+    <div class="row-actions"><button class="live-btn" id="liveBtn" title="Muestra un QR: quien lo escanea se registra y lo ves llegar en tiempo real">📱 Demo en vivo</button><a class="ghost" id="rep" target="_blank" rel="noopener">Informe</a><a class="ghost" id="open" target="_blank" rel="noopener">Abrir publica ↗</a></div>
+   </div>
+   <div class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-t="prev" aria-selected="true">Vista previa</button>
+    <button class="tab" role="tab" data-t="opt" aria-selected="false">🤖 Optimizador</button>
+    <button class="tab" role="tab" data-t="met" aria-selected="false">Metricas</button>
+    <button class="tab" role="tab" data-t="mail" aria-selected="false">Emails</button>
+    <button class="tab" role="tab" data-t="pay" aria-selected="false">Pagos</button>
+   </div>
+
+   <div class="tabpanel" data-p="prev" role="tabpanel">
+    <div class="row-actions" style="justify-content:space-between">
+     <div class="seg" id="steps" role="group" aria-label="Paso del embudo"></div>
+     <div class="row-actions"><div class="seg" role="group" aria-label="Dispositivo"><button id="dDesk" aria-pressed="true">Escritorio</button><button id="dMob" aria-pressed="false">Movil</button></div>
+      <label class="sw2" title="Muestra u oculta la burbuja de chat del agente vendedor en la landing publicada"><input type="checkbox" id="sellerOn"> 💬 Chat vendedor</label>
+      <a class="edit" id="editLink" target="_blank" rel="noopener" title="Editor visual de arrastrar y soltar (como Elementor)">✏️ Editor visual</a></div>
+    </div>
+    <div class="inline"><input type="text" id="ins" aria-label="Cambio a aplicar" placeholder="Pide un cambio a la landing: mas oscura, agrega bonus, cambia el titular...">
+     <button class="sec" id="ref">Aplicar</button><button class="ghost" id="undo" title="Deshacer el ultimo ajuste">↶ Deshacer</button></div>
+    <div id="frameWrap"><iframe id="frame" title="Vista previa del embudo"></iframe></div>
+   </div>
+
+   <div class="tabpanel" data-p="opt" role="tabpanel" hidden>
+    <span class="hint">Un agente autonomo: decide que herramientas usar (metricas, critico, editar landing, reescribir ofertas, A/B). Propone y modifica solo si se lo apruebas.</span>
+    <div id="chatLog" class="chatlog" aria-live="polite"></div>
+    <div class="row-actions" id="chatChips">
+     <button class="chip" type="button">¿Como va este embudo y que mejorarias primero?</button>
+     <button class="chip" type="button">El upsell casi no vende, ¿que hacemos?</button>
+     <button class="chip" type="button">Pidele al critico que revise la landing</button>
+    </div>
+    <div class="inline"><input type="text" id="chatIn" aria-label="Mensaje al optimizador" placeholder="Preguntale algo al optimizador...">
+     <button class="sec" id="chatSend">Enviar</button></div>
+   </div>
+
+   <div class="tabpanel" data-p="met" role="tabpanel" hidden><div id="metrics"></div></div>
+   <div class="tabpanel" data-p="mail" role="tabpanel" hidden><div id="mails"></div></div>
+   <div class="tabpanel" data-p="pay" role="tabpanel" hidden><div id="pays"></div></div>
+  </section>
+
+  <dialog id="whDlg" aria-labelledby="whTitle">
+ <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+  <div class="row-actions" style="justify-content:space-between"><h2 id="whTitle" style="margin:0;font-size:18px">🔗 Integraciones: webhooks para tu CRM</h2><button class="ghost" id="whClose">Cerrar</button></div>
+  <span class="hint">Cada lead, compra, reembolso o carrito abandonado se envia como un contacto a las URLs que configures (por ejemplo, el webhook de n8n que lo pasa a HubSpot, Pipedrive, Brevo o GoHighLevel). Va firmado, se reintenta si el CRM falla y queda registrado abajo.</span>
+  <div id="whList" class="col" style="gap:10px"></div>
+  <div class="row-actions"><button class="sec" id="whN8n" title="Crea el webhook hacia el workflow de CRM de tu n8n, con su clave">⚡ Conectar con mi n8n</button><button class="ghost" id="whAdd">+ Añadir webhook</button><button class="sec" id="whSave">Guardar cambios</button><span class="hint" id="whState"></span></div>
+  <div class="wh" id="capiBox">
+   <div class="full"><h3 style="margin:0;font-size:15px">📈 Meta Conversions API <span class="hint" id="capiState"></span></h3>
+    <span class="hint">Tu servidor envia el Lead y la Compra directamente a Meta, aunque el navegador bloquee el pixel (adblock, iOS). El pixel y el servidor comparten el mismo ID de evento, asi Meta no los cuenta dos veces. Los datos personales viajan cifrados (SHA-256).</span></div>
+   <div><label for="capiPixel">ID del pixel</label><input type="text" id="capiPixel" inputmode="numeric" placeholder="123456789012345"></div>
+   <div><label for="capiToken">Token de acceso (Administrador de eventos → Configuracion → API de conversiones)</label><input type="text" id="capiToken" placeholder="EAAB..."></div>
+   <div><label for="capiTest">Codigo de prueba (opcional)</label><input type="text" id="capiTest" placeholder="TEST12345"></div>
+   <div class="row-actions" style="align-items:flex-end"><label class="sw2"><input type="checkbox" id="capiOn" checked> Activa</label>
+    <button class="sec" id="capiSave" type="button">Guardar</button><button class="ghost" id="capiTry" type="button">Enviar evento de prueba</button><span class="hint" id="capiRes"></span></div>
+   <div class="full"><small class="hint">Con el codigo de prueba, los eventos aparecen en vivo en Administrador de eventos → Probar eventos. Borralo cuando termines de probar.</small></div>
+  </div>
+  <details><summary class="hint" style="cursor:pointer">Formato que recibe el CRM (JSON)</summary><pre class="cp" id="whSample" style="white-space:pre-wrap;font-size:12px;margin:6px 0 0"></pre></details>
+  <h3 style="margin:6px 0 0;font-size:15px">Ultimos envios</h3>
+  <div id="whLog" style="overflow:auto;max-height:36vh"></div>
+ </div>
+</dialog>
+
+<dialog id="hmDlg" aria-labelledby="hmTitle">
+ <div style="padding:20px;display:flex;flex-direction:column;gap:10px">
+  <div class="row-actions" style="justify-content:space-between"><h2 id="hmTitle" style="margin:0;font-size:18px">💳 Eventos de Hotmart</h2>
+   <div class="row-actions"><span class="hint" id="hmCount"></span><button class="ghost" id="hmClose">Cerrar</button></div></div>
+  <span class="hint">Todo lo que Hotmart avisa a tu servidor, de que landing y producto es, y lo que hizo el sistema. Se actualiza solo.</span>
+  <div id="hmTable" style="overflow:auto;max-height:70vh"></div>
+ </div>
+</dialog>
+
+<dialog id="liveDlg" aria-labelledby="lvTitle">
+ <div class="lv">
+  <div class="lv-qr"><h2 id="lvTitle">Escanea y regístrate</h2><img id="lvQr" alt="Código QR de la landing"><small id="lvUrl"></small>
+   <label class="switch" style="color:#fff"><input type="checkbox" id="lvDemo"> Emails en modo demo (1 día = 1 min)</label></div>
+  <div class="lv-feed">
+   <div class="row-actions" style="justify-content:space-between"><strong>Lo que pasa en el embudo, en tiempo real</strong><button class="ghost" id="lvClose">Cerrar</button></div>
+   <div class="lv-k"><div><b id="lvV">0</b><span>visitas nuevas</span></div><div><b id="lvL">0</b><span>leads</span></div><div><b id="lvP">0</b><span>compras</span></div></div>
+   <div class="lv-wait" id="lvWait"><i></i>Esperando a que alguien escanee el código…</div>
+   <ul class="lv-tl" id="lvTl" aria-live="polite"></ul>
+  </div>
+ </div>
+</dialog>
+
+  <section class="panel empty" id="welcome">
+   <b>Un equipo de 6 agentes construye tu embudo</b>
+   <span>Estratega → Copywriter, Arquitecto y Estratega de contenido en paralelo → Auditor y Critico revisan y devuelven el trabajo si hace falta.</span>
+   <span>Escribe un brief a la izquierda o abre un embudo de la lista.</span>
+  </section>
+ </div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tone=s=>s>=85?'good':s>=60?'mid':'bad';
+const pct=(l,v)=>v&&l<=v?(100*l/v).toFixed(1)+'%':'—';  // leads sin visitas medidas no dan una tasa real
+const money=v=>v==null?'—':Math.round(v).toLocaleString('es')+' USD';
+const usd=v=>v==null?'—':(v<1?v.toFixed(3):v.toFixed(2))+' USD';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let rows=[],cur=null,det=null,curStep='A',tab='prev';
+const show=(id,on)=>{$(id).hidden=!on};
+
+// ---------- formulario ----------
+$('examples').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{$('p').value=b.textContent;$('p').focus()});
+$('imgs').onchange=()=>{$('thumbs').innerHTML='';[...$('imgs').files].slice(0,4).forEach(f=>{const i=document.createElement('img');i.src=URL.createObjectURL(f);i.alt=f.name;$('thumbs').appendChild(i)})};
+['c1','c2','c3'].forEach(k=>$(k).onchange=()=>$('usePal').checked=true);
+
+// ---------- modo demo de emails ----------
+fetch('/api/settings').then(r=>r.ok?r.json():null).then(d=>{if(d)$('demoMode').checked=d.email_demo});
+$('demoMode').onchange=async e=>{const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({email_demo:e.target.checked})});
+  $('status').textContent=r.ok?(e.target.checked?'Modo demo: en los leads nuevos, un dia de emails dura 1 minuto.':'Emails en tiempo real (1 dia = 24 h).'):'No se pudo cambiar el modo';};
+
+// ---------- lista ----------
+async function loadList(){
+  const r=await fetch('/api/landings');if(!r.ok)return;rows=await r.json();
+  const V=rows.reduce((s,x)=>s+x.views,0),L=rows.reduce((s,x)=>s+x.leads,0),R=rows.reduce((s,x)=>s+x.metrics.revenue,0),U=rows.reduce((s,x)=>s+(x.usd||0),0);
+  const m=rows.filter(x=>x.views>0&&x.views>=x.leads);
+  $('kL').textContent=rows.filter(x=>x.has_funnel).length;$('kV').textContent=V;$('kLe').textContent=L;
+  $('kC').textContent=pct(m.reduce((s,x)=>s+x.leads,0),m.reduce((s,x)=>s+x.views,0));$('kR').textContent=money(R);$('kU').textContent=usd(U);
+  const full=rows.filter(x=>x.has_funnel),old=rows.filter(x=>!x.has_funnel);
+  const item=x=>'<div class="item'+(x.slug===cur?' on':'')+'"><div style="min-width:0"><b data-open="'+x.slug+'" title="'+esc(x.title)+'">'+esc(x.title)+'</b>'+
+    '<small>'+x.views+' visitas · '+x.leads+' leads · '+pct(x.leads,x.views)+'</small><div class="meta">'+
+    (x.seo_score!=null?'<span class="badge '+tone(x.seo_score)+'">SEO '+x.seo_score+'</span>':'')+
+    (x.critic?'<span class="badge '+tone(x.critic*10)+'">Critico '+x.critic+'</span>':'')+
+    (x.ab_active?'<span class="badge ab">A/B</span>':'')+'</div></div><div class="row-actions">'+
+    (x.has_funnel?'<button class="ghost" data-open="'+x.slug+'">Abrir</button>':'<button class="ghost" data-seo="'+x.slug+'">Optimizar</button>')+
+    '<button class="ghost" data-del="'+x.slug+'" aria-label="Borrar '+esc(x.title)+'">✕</button></div></div>';
+  $('list').innerHTML=(full.length?full.map(item).join(''):'<span class="hint">Aun no hay embudos completos.</span>')+
+    (old.length?'<details class="legacy"><summary>Landings antiguas sin embudo ('+old.length+') · "Optimizar" las completa con el equipo</summary>'+old.map(item).join('')+'</details>':'');
+  $('list').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openFunnel(b.dataset.open));
+  $('list').querySelectorAll('[data-seo]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;const res=await fetch('/api/landings/'+b.dataset.seo+'/seo',{method:'POST'});const d=await res.json();
+    if(!res.ok){$('status').textContent='Error: '+d.detail;b.disabled=false;return}
+    const j=await follow(d.job,'El equipo esta completando esta landing');
+    if(j.status==='done'){await loadList();openFunnel(d.slug)}else b.disabled=false});
+  $('list').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Borrar este embudo? Los leads se conservan.'))return;
+    await fetch('/api/landings/'+b.dataset.del,{method:'DELETE'});if(cur===b.dataset.del){cur=null;show('detail',false);show('welcome',true)}loadList()});
+}
+
+// ---------- equipo en vivo ----------
+function card(a){return a?'<div class="ag s-'+a.status+'"><div class="hd"><span class="em" aria-hidden="true">'+a.emoji+'</span>'+esc(a.name)+
+  '<span class="st">'+esc(a.status)+'</span></div><small>'+esc(a.note||a.role)+'</small></div>':''}
+function renderFlow(agents){
+  const by={};agents.forEach(a=>by[a.id]=a);
+  if(by.optimizador&&agents.length===1)return card(by.optimizador);
+  return '<div class="stack">'+card(by.estratega)+'</div><div class="arrow" aria-hidden="true">→</div>'+
+    '<div class="stack">'+card(by.copywriter)+card(by.arquitecto)+card(by.contenido)+'</div><div class="arrow" aria-hidden="true">→</div>'+
+    '<div class="stack">'+card(by.auditor)+card(by.critico)+'</div>';
+}
+async function follow(jobId,title){
+  show('welcome',false);show('summary',false);show('detail',false);show('live',true);
+  $('liveTitle').innerHTML='<span class="pulse"></span>'+esc(title);$('trace').innerHTML='';$('rework').hidden=true;$('trWrap').open=false;
+  let n=0,j;
+  while(true){
+    try{const r=await fetch('/api/jobs/'+jobId);j=await r.json();if(!r.ok)throw new Error(j.detail)}catch(e){$('status').textContent='Error: '+e.message;return {status:'error'}}
+    $('flow').innerHTML=renderFlow(j.agents||[]);
+    $('clock').textContent=j.elapsed.toFixed(0)+' s · '+usd(j.usage.usd)+' · '+j.usage.calls+' llamadas al modelo';
+    const names={};(j.agents||[]).forEach(a=>names[a.id]=a.emoji+' '+a.name);
+    j.trace.slice(n).forEach(x=>{const li=document.createElement('li');li.className='k-'+x.kind;
+      li.innerHTML='<code>'+x.t.toFixed(1)+'s</code><span class="who"><span class="nm">'+esc(names[x.agent]||'')+'</span><span class="k">'+esc(x.kind)+'</span></span><span>'+esc(x.text)+'</span>';
+      $('trace').appendChild(li)});
+    n=j.trace.length;$('trSum').textContent='Traza completa ('+n+' pasos)';
+    const back=j.trace.filter(t=>t.kind==='handoff'&&t.agent==='critico').pop();
+    if(back){$('rework').hidden=false;$('rework').textContent='↩ '+back.text}
+    $('status').textContent=j.status==='running'?'El equipo esta trabajando...':'';
+    if(j.status!=='running')break;
+    await sleep(1000);
+  }
+  $('liveTitle').textContent=j.status==='done'?'Equipo de agentes: terminado':'Equipo de agentes: error';
+  if(j.status==='error'){$('status').textContent='Error: '+j.error;return j}
+  renderSummary(j);show('live',false);
+  return j;
+}
+function nums(trace,agent,re){return trace.filter(t=>t.agent===agent).map(t=>(t.text.match(re)||[])[1]).filter(Boolean).map(Number)}
+function renderSummary(j){
+  const seo=nums(j.trace,'auditor',/SEO (\d+)\/100/),cr=nums(j.trace,'critico',/Nota media ([\d.]+)/),res=j.result||{};
+  const d=(a)=>a.length>1&&a[0]!==a[a.length-1]?a[0]+' → '+a[a.length-1]:(a[a.length-1]??'—');
+  const reworked=j.trace.some(t=>t.kind==='handoff'&&t.agent==='critico');
+  $('summary').innerHTML='<h2>✅ El equipo termino en '+j.elapsed.toFixed(0)+' s</h2>'+
+    '<span class="hint">'+(reworked?'Los revisores devolvieron la landing al Copywriter y la nueva version fue aceptada.':'Los revisores aprobaron la primera version.')+'</span>'+
+    '<div class="deltas"><div class="delta"><span>SEO</span><b>'+d(seo)+'</b></div><div class="delta"><span>Critico (cliente ideal)</span><b>'+d(cr)+' /10</b></div>'+
+    '<div class="delta"><span>Conversion (checks)</span><b>'+esc(res.conv||'—')+'</b></div><div class="delta"><span>Costo de IA</span><b>'+usd(j.usage.usd)+'</b><span>'+
+    ((j.usage.input_tokens+j.usage.output_tokens)/1000).toFixed(0)+'k tokens · '+j.usage.calls+' llamadas</span></div></div>'+
+    '<div class="row-actions"><button class="ghost" id="showTrace">Ver traza del equipo</button>'+(res.keyword?'<span class="hint">Keyword principal: <b>'+esc(res.keyword)+'</b></span>':'')+'</div>';
+  show('summary',true);
+  $('showTrace').onclick=()=>{show('live',true);$('trWrap').open=true;$('live').scrollIntoView({behavior:'smooth'})};
+}
+
+// ---------- detalle ----------
+async function openFunnel(slug){
+  cur=slug;tab='prev';
+  const r=await fetch('/api/landings/'+slug);if(!r.ok){$('status').textContent='No se pudo abrir el embudo';return}
+  det=await r.json();const row=rows.find(x=>x.slug===slug)||{};
+  show('welcome',false);show('detail',true);
+  $('dTitle').textContent=det.title;$('rep').href='/estrategia/'+slug;$('open').href='/p/'+slug;$('editLink').href='/editor/'+slug;$('sellerOn').checked=!!det.seller_chat;$('sellerOn').disabled=!det.strategy;
+  const crit=(det.critic||{}).promedio;
+  $('dBadges').innerHTML=(det.seo_score!=null?'<span class="badge '+tone(det.seo_score)+'">SEO '+det.seo_score+'/100</span>':'')+
+    (crit?'<span class="badge '+tone(crit*10)+'">Critico '+crit+'/10</span>':'')+
+    (det.conv_report?'<span class="badge">Conversion '+det.conv_report.passed+'/'+det.conv_report.total+'</span>':'')+
+    (det.framework?'<span class="badge">'+esc(det.framework)+'</span>':'')+(row.keyword?'<span class="hint">«'+esc(row.keyword)+'»</span>':'');
+  const STEPS=[['A','Landing A'],['B','Landing B'],['checkout','Checkout'],['upsell','Upsell'],['downsell','Downsell'],['gracias','Gracias']];
+  $('steps').innerHTML=STEPS.filter(([s])=>s==='A'||(s==='B'&&row.titular_b)||(s!=='A'&&s!=='B'&&row.has_funnel))
+    .map(([s,l])=>'<button data-s="'+s+'">'+l+'</button>').join('');
+  $('steps').querySelectorAll('button').forEach(b=>b.onclick=()=>setStep(b.dataset.s));
+  if(chatFor!==slug){chat=[];chatFor=slug;renderChat()}
+  setTab('prev');setStep('A');renderMetrics();renderMails();renderPays();loadList();
+}
+function setTab(t){tab=t;$('tabs').querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.hidden=p.dataset.p!==t)}
+$('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+function stepUrl(s){const t='&t='+Date.now();
+  if(s==='A'||s==='B')return '/p/'+cur+'?preview=1&v='+s+t;
+  if(s==='checkout')return '/checkout/'+cur+'/main?x='+Date.now();
+  return '/p/'+cur+'/'+s+'?preview=1'+t}
+function setStep(s){curStep=s;$('steps').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===s));$('frame').src=stepUrl(s)}
+function setDev(m){$('dMob').setAttribute('aria-pressed',m);$('dDesk').setAttribute('aria-pressed',!m);$('frame').classList.toggle('m',m)}
+$('dDesk').onclick=()=>setDev(false);$('dMob').onclick=()=>setDev(true);
+$('ref').onclick=async()=>{
+  const instruction=$('ins').value.trim();if(!cur||instruction.length<4)return;
+  $('ref').disabled=true;$('status').textContent='Aplicando el cambio...';
+  try{const r=await fetch('/api/refine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:cur,instruction})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||'No se pudo aplicar');
+    $('ins').value='';setStep('A');$('status').textContent='Cambio aplicado. SEO '+d.seo_score+'/100 · conversion '+d.conv;}
+  catch(e){$('status').textContent='Error: '+e.message}finally{$('ref').disabled=false}};
+$('undo').onclick=async()=>{if(!cur)return;const r=await fetch('/api/undo/'+cur,{method:'POST'});
+  $('status').textContent=r.ok?'Version anterior restaurada.':'No hay version anterior para restaurar.';if(r.ok)setStep('A')};
+
+// ---------- metricas ----------
+function renderMetrics(){
+  const m=det.metrics,top=Math.max(m.steps[0].n,1),v=det.variants||{},a=v.A||{views:0,leads:0},b=v.B||{views:0,leads:0};
+  let fun='';m.steps.forEach((s,i)=>{
+    if(i>0)fun+='<div class="conv">↓ '+(s.rate!=null?s.rate+'% '+esc(s.of||''):'sin datos suficientes')+'</div>';
+    fun+='<div class="lvl"><span>'+esc(s.label)+'</span><div><div class="bar" style="width:'+Math.max(3,100*s.n/top)+'%"></div></div><b>'+s.n+'</b></div>'});
+  const crit=det.critic||{},secs=(crit.secciones||[]).map(x=>'<div class="sec-row"><span>'+esc(x.seccion)+'</span><div class="sbar"><i style="width:'+x.nota*10+'%;background:'+
+    (x.nota>=8?'#17803d':x.nota>=7?'#d18a00':'#c02626')+'"></i></div><b>'+x.nota+'</b></div>').join('');
+  const u=det.usage||{},ch=Object.entries(det.channels||{});
+  $('metrics').innerHTML='<div class="grid2">'+
+    '<div class="card"><h3>Embudo</h3><div class="fun">'+fun+'</div><div class="money"><div><small>Ingresos</small><b>'+money(m.revenue)+'</b></div>'+
+    '<div><small>Ticket medio</small><b>'+money(m.aov)+'</b></div><div><small>Compras</small><b>'+m.purchases.main+'</b></div></div>'+
+    '<div class="pills"><small>Leads por canal:</small>'+(ch.length?ch.map(([k,n])=>'<span>'+esc(k)+' · '+n+'</span>').join(''):'<small>sin leads</small>')+'</div></div>'+
+    '<div class="col" style="gap:12px">'+
+    (det.strategy&&det.strategy.titular_b?'<div class="card"><h3>Test A/B del titular</h3><label><input type="checkbox" id="abOn" '+(det.ab_active?'checked':'')+'> Activo <span class="hint">(50/50 por visitante, misma URL)</span></label>'+
+     '<div class="vs"><div><small>A</small><br>'+esc(det.strategy.titular_a)+'<br><small>'+a.views+' visitas · '+a.leads+' leads · <b>'+pct(a.leads,a.views)+'</b></small></div>'+
+     '<div><small>B</small><br>'+esc(det.strategy.titular_b)+'<br><small>'+b.views+' visitas · '+b.leads+' leads · <b>'+pct(b.leads,b.views)+'</b></small></div></div>'+
+     '<span class="hint">'+esc(det.ab&&det.ab.message)+'</span>'+(det.ab&&det.ab.routing?'<div class="sbar" title="Reparto del trafico nuevo" style="height:10px"><i style="width:'+(100-det.ab.traffic_b)+'%;background:#1f6feb"></i></div><span class="hint">🧠 '+esc(det.ab.routing)+'</span>':'')+(det.ab&&det.ab.winner==='B'?'<button class="ghost" id="promo">Usar B como principal</button>':'')+'</div>':'')+
+    (secs?'<div class="card"><h3>Critico de conversion: '+crit.promedio+'/10'+(crit.inicial!=null?' <small>(primera version: '+crit.inicial+')</small>':'')+'</h3>'+secs+
+     (crit.resumen?'<span class="hint">'+esc(crit.resumen)+'</span>':'')+'</div>':'')+
+    (u.usd!=null?'<div class="card"><h3>Costo de generacion</h3><div class="money"><div><small>IA</small><b>'+usd(u.usd)+'</b></div><div><small>Tokens</small><b>'+
+     ((u.input_tokens+u.output_tokens)/1000).toFixed(0)+'k</b></div><div><small>Tiempo</small><b>'+(u.seconds||0).toFixed(0)+' s</b></div></div></div>':'')+
+    '</div></div>';
+  if($('abOn'))$('abOn').onchange=async e=>{const r=await fetch('/api/landings/'+cur+'/ab',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:e.target.checked})});
+    if(!r.ok){e.target.checked=false;$('status').textContent=(await r.json()).detail}else{det.ab_active=e.target.checked;loadList()}};
+  if($('promo'))$('promo').onclick=async()=>{await fetch('/api/landings/'+cur+'/ab/promote',{method:'POST'});openFunnel(cur)};
+}
+
+$('sellerOn').onchange=async e=>{if(!cur)return;
+  const r=await fetch('/api/landings/'+cur+'/seller',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:e.target.checked})});
+  if(!r.ok){e.target.checked=!e.target.checked;$('status').textContent='No se pudo cambiar el chat';return}
+  det.seller_chat=e.target.checked;$('status').textContent=e.target.checked?'Chat vendedor activado en la landing.':'Chat vendedor desactivado: la landing ya no muestra la burbuja.';
+  if(curStep==='A'||curStep==='B')setStep(curStep)};
+
+// ---------- integraciones: webhooks salientes para el CRM ----------
+let wh={hooks:[],events:{}};
+const WH_SAMPLE={id:'9f2c…',event:'purchase.completed',stage:'Cliente',occurred_at:'2026-10-27T10:15:00+00:00',source:'landing-agent',
+  contact:{email:'ana@ejemplo.com',name:'Ana Lopez',first_name:'Ana',last_name:'Lopez'},
+  landing:{slug:'curso-de-meditacion',title:'Curso de meditacion',url:'https://embudos.quepapayazo.com/p/curso-de-meditacion'},
+  utm:{utm_source:'instagram',utm_medium:'',utm_campaign:'otono'},lead_id:42,variant:'B',
+  product:{item:'main',name:'Meditaciones de Marco Aurelio',price:19.9,currency:'EUR'}};
+function whCard(h,i){
+  const hk=Object.keys(h.headers||{})[0]||'',hv=hk?h.headers[hk]:'';
+  return '<div class="wh" data-i="'+i+'"><div><label>Nombre</label><input type="text" class="w-name" value="'+esc(h.name||'')+'" placeholder="n8n → CRM"></div>'+
+    '<div><label>URL que recibe los eventos</label><input type="url" class="w-url" value="'+esc(h.url||'')+'" placeholder="https://tu-n8n.com/webhook/..."></div>'+
+    '<div class="full"><label>Eventos</label><div class="wh-ev">'+Object.entries(wh.events).map(([k,l])=>'<label><input type="checkbox" class="w-ev" value="'+k+'"'+((h.events||[]).includes(k)?' checked':'')+'> '+esc(l)+'</label>').join('')+'</div></div>'+
+    '<div class="full"><label>Cabecera de autenticacion (opcional)</label><div class="wh-h"><input type="text" class="w-hk" value="'+esc(hk)+'" placeholder="X-Automation-Key"><input type="text" class="w-hv" value="'+esc(hv)+'" placeholder="valor (se guarda oculto)"></div></div>'+
+    (h.secret?'<div class="full"><label>Secreto de firma (para verificar X-Landing-Signature en el receptor)</label><code class="cp">'+esc(h.secret)+'</code></div>':'')+
+    '<div class="full row-actions"><label class="sw2"><input type="checkbox" class="w-on"'+(h.active!==false?' checked':'')+'> Activo</label>'+
+    (h.id?'<button class="ghost w-test" type="button">Enviar prueba</button>':'<span class="hint">Guarda para poder probarlo</span>')+
+    '<button class="ghost w-del" type="button">Eliminar</button><span class="hint w-res"></span></div></div>'}
+function whCollect(){return [...document.querySelectorAll('#whList .wh')].map((el,i)=>{const hk=el.querySelector('.w-hk').value.trim(),hv=el.querySelector('.w-hv').value;
+  return {id:wh.hooks[i]&&wh.hooks[i].id||'',name:el.querySelector('.w-name').value.trim()||'Webhook',url:el.querySelector('.w-url').value.trim(),
+    events:[...el.querySelectorAll('.w-ev:checked')].map(c=>c.value),active:el.querySelector('.w-on').checked,headers:hk&&hv?{[hk]:hv}:{}}})}
+function whDraw(){
+  $('whList').innerHTML=wh.hooks.length?wh.hooks.map(whCard).join(''):'<span class="hint">No hay webhooks. Añade uno con la URL de tu webhook de n8n (o la de tu CRM si acepta webhooks).</span>';
+  $('whList').querySelectorAll('.wh').forEach(el=>{const i=+el.dataset.i;
+    el.querySelector('.w-del').onclick=()=>{wh.hooks=whCollect();wh.hooks.splice(i,1);whDraw();$('whState').textContent='Sin guardar'};
+    const t=el.querySelector('.w-test');if(t)t.onclick=async()=>{t.disabled=true;el.querySelector('.w-res').textContent='Enviando…';
+      const r=await fetch('/api/webhooks/'+wh.hooks[i].id+'/test',{method:'POST'});const d=await r.json();t.disabled=false;
+      el.querySelector('.w-res').textContent=d.ok?'✅ Recibido ('+d.status+')':'❌ '+(d.status?'Respondio '+d.status:'Sin respuesta')+(d.error?': '+d.error:'');whLoad(true)}});
+}
+function whLogDraw(rows){
+  $('whLog').innerHTML=!rows.length?'<span class="hint">Aun no se ha enviado nada.</span>':'<table class="hm"><thead><tr><th>Fecha</th><th>Webhook</th><th>Evento</th><th>Contacto</th><th>Resultado</th></tr></thead><tbody>'+
+    rows.map(d=>'<tr><td style="white-space:nowrap">'+new Date(d.ts*1000).toLocaleString('es',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</td>'+
+      '<td>'+esc(d.hook_name)+'</td><td class="hm-ev">'+esc(wh.events[d.event]||d.event)+'</td><td>'+esc(d.email||'—')+'</td>'+
+      '<td class="'+(d.ok?'hm-ok':'hm-bad')+'">'+(d.ok?'✅ '+d.status:'❌ '+(d.status||'sin respuesta'))+(d.attempts>1?' · '+d.attempts+' intentos':'')+(d.error&&!d.ok?'<br><small class="hm-mut">'+esc(d.error)+'</small>':'')+'</td></tr>').join('')+'</tbody></table>'}
+async function whLoad(onlyLog){const r=await fetch('/api/webhooks');if(!r.ok)return;const d=await r.json();wh.events=d.events;
+  if(!onlyLog){wh.hooks=d.hooks;whDraw()}whLogDraw(d.deliveries)}
+$('whBtn').onclick=e=>{e.preventDefault();$('whSample').textContent=JSON.stringify(WH_SAMPLE,null,2);$('whState').textContent='';$('whDlg').showModal();whLoad();capiLoad()};
+async function capiLoad(){const r=await fetch('/api/meta-capi');if(!r.ok)return;const c=await r.json();
+  $('capiPixel').value=c.pixel_id||'';$('capiToken').value=c.token||'';$('capiTest').value=c.test_code||'';$('capiOn').checked=c.active!==false;
+  $('capiState').textContent=c.enabled?'· ✅ enviando eventos':'· sin configurar'}
+$('capiSave').onclick=async()=>{const body={pixel_id:$('capiPixel').value.trim(),token:$('capiToken').value.trim(),test_code:$('capiTest').value.trim(),active:$('capiOn').checked};
+  const r=await fetch('/api/meta-capi',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  $('capiRes').textContent=r.ok?'Guardado ✓':'Revisa el ID del pixel (solo numeros)';if(r.ok)capiLoad()};
+$('capiTry').onclick=async()=>{$('capiRes').textContent='Enviando…';const r=await fetch('/api/meta-capi/test',{method:'POST'});const d=await r.json();
+  $('capiRes').textContent=!r.ok?'❌ '+(d.detail||'error'):d.ok?'✅ Meta lo recibio ('+d.status+')':'❌ Meta respondio '+(d.status||'sin respuesta')+(d.error?': '+d.error:'');whLoad(true)};
+$('whClose').onclick=()=>$('whDlg').close();
+$('whN8n').onclick=async()=>{$('whN8n').disabled=true;$('whState').textContent='Conectando…';
+  const r=await fetch('/api/webhooks/n8n',{method:'POST'});const d=await r.json();$('whN8n').disabled=false;
+  if(!r.ok){$('whState').textContent='Error: '+(d.detail||'no se pudo conectar');return}
+  wh.hooks=d.hooks;whDraw();$('whState').textContent='Conectado ✓ Pulsa "Enviar prueba" para verlo llegar a n8n.'};
+$('whAdd').onclick=()=>{wh.hooks=whCollect();wh.hooks.push({name:'',url:'',events:Object.keys(wh.events),active:true,headers:{}});whDraw();$('whState').textContent='Sin guardar'};
+$('whSave').onclick=async()=>{const hooks=whCollect();if(hooks.some(h=>!/^https?:\/\//.test(h.url))){$('whState').textContent='Cada webhook necesita una URL que empiece por https://';return}
+  const r=await fetch('/api/webhooks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hooks})});
+  if(!r.ok){$('whState').textContent='Error al guardar: revisa las URLs';return}wh.hooks=(await r.json()).hooks;whDraw();$('whState').textContent='Guardado ✓'};
+
+// ---------- eventos de Hotmart (visor con filtros) ----------
+const ITEM_L={main:'Principal',upsell:'Upsell',downsell:'Downsell'};
+const HM_TYPES=[['all','Todos'],['compra','💰 Compras'],['reverso','↩️ Reembolsos y cancelaciones'],['carrito','🛒 Carritos abandonados'],['pendiente','⏳ Pendientes'],['otro','Otros']];
+const hmState={};
+function hmStatus(e){
+  if(e.test)return ['🧪','hm-test'];
+  if(/^Compra registrada/.test(e.result))return ['✅','hm-ok'];
+  if(/^Acceso cortado/.test(e.result))return ['↩️','hm-bad'];
+  if(/^Pago no completado/.test(e.result))return ['⛔','hm-mut'];
+  if(/Sin landing|No habia/.test(e.result))return ['⚠️','hm-bad'];
+  return ['•','hm-mut']}
+function hmMoney(list){const by={};list.forEach(e=>{const m=(e.amount||'').match(/^([\d.]+)\s*(\w*)/);if(m){const k=m[2]||'';by[k]=(by[k]||0)+parseFloat(m[1])}});
+  const parts=Object.entries(by).map(([c,v])=>v.toLocaleString('es',{maximumFractionDigits:2})+' '+c);return parts.length?parts.join(' · '):'0'}
+function hmView(rootId,events,withLanding){
+  const root=$(rootId);if(!root)return;
+  let st=hmState[rootId];
+  if(!st||!root.querySelector('.hm-f')){
+    st=hmState[rootId]={type:'all',tests:false,q:'',slug:''};
+    root.innerHTML='<div class="hm-f">'+(withLanding?'<select class="hm-l" aria-label="Landing"><option value="">Todas las landings</option></select>':'')+
+      '<input type="search" class="hm-q" placeholder="Buscar email, producto o transaccion…" aria-label="Buscar">'+
+      '<label><input type="checkbox" class="hm-t"> Mostrar pruebas de Hotmart</label></div>'+
+      '<div class="hm-types" role="group" aria-label="Tipo de evento">'+HM_TYPES.map(([k,l])=>'<button type="button" data-k="'+k+'" aria-pressed="'+(k==='all')+'">'+l+'</button>').join('')+'</div>'+
+      '<div class="hm-body"></div>';
+    root.querySelector('.hm-q').oninput=e=>{st.q=e.target.value.trim().toLowerCase();hmDraw(rootId)};
+    root.querySelector('.hm-t').onchange=e=>{st.tests=e.target.checked;hmDraw(rootId)};
+    if(withLanding)root.querySelector('.hm-l').onchange=e=>{st.slug=e.target.value;hmDraw(rootId)};
+    root.querySelectorAll('.hm-types button').forEach(b=>b.onclick=()=>{st.type=b.dataset.k;
+      root.querySelectorAll('.hm-types button').forEach(x=>x.setAttribute('aria-pressed',x===b));hmDraw(rootId)});
+  }
+  st.events=events;st.withLanding=withLanding;
+  if(withLanding){const sel=root.querySelector('.hm-l'),cur0=sel.value,seen={};
+    events.forEach(e=>{if(e.slug&&!seen[e.slug])seen[e.slug]=e.landing||e.slug});
+    sel.innerHTML='<option value="">Todas las landings</option>'+Object.entries(seen).map(([k,v])=>'<option value="'+esc(k)+'">'+esc(v)+'</option>').join('');sel.value=cur0}
+  hmDraw(rootId);
+}
+function hmDraw(rootId){
+  const st=hmState[rootId],root=$(rootId);if(!st||!root)return;
+  const base=st.events.filter(e=>(st.tests||!e.test)&&(!st.slug||e.slug===st.slug)&&
+    (!st.q||[e.buyer,e.product,e.transaction_id,e.landing,e.label].join(' ').toLowerCase().includes(st.q)));
+  const rows=base.filter(e=>st.type==='all'||e.category===st.type);
+  const ok=base.filter(e=>/^Compra registrada/.test(e.result)),rev=base.filter(e=>/^Acceso cortado/.test(e.result));
+  const kpi='<div class="hm-k"><div><b>'+ok.length+'</b><span>compras confirmadas</span></div><div><b>'+hmMoney(ok)+'</b><span>importe confirmado</span></div>'+
+    '<div><b>'+rev.length+'</b><span>reembolsos aplicados</span></div><div><b>'+base.filter(e=>e.category==='carrito').length+'</b><span>carritos abandonados</span></div>'+
+    '<div><b>'+base.filter(e=>/^Pago no completado/.test(e.result)).length+'</b><span>pagos no completados</span></div></div>';
+  const table=!rows.length?'<span class="hint">'+(st.events.length?'Ningun evento coincide con los filtros.':'Aun no hay eventos de Hotmart. Usa "Prueba tu configuracion" en Hotmart o haz una compra.')+'</span>':
+    '<table class="hm"><thead><tr><th>Fecha</th><th>Evento</th>'+(st.withLanding?'<th>Landing</th>':'')+'<th>Producto</th><th>Comprador</th><th>Importe</th><th>Lo que hizo el sistema</th></tr></thead><tbody>'+
+    rows.map(e=>{const [ic,cls]=hmStatus(e);
+      return '<tr><td style="white-space:nowrap">'+new Date(e.ts*1000).toLocaleString('es',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</td>'+
+      '<td class="hm-ev">'+esc(e.label)+(e.test?'<span class="hm-pill">prueba</span>':'')+'</td>'+
+      (st.withLanding?'<td>'+(e.landing?'<a href="#" data-open-funnel="'+esc(e.slug)+'">'+esc(e.landing)+'</a>':'<span class="hm-mut">—</span>')+'</td>':'')+
+      '<td>'+esc(e.product||'—')+(e.item?' <small class="hm-mut">· '+(ITEM_L[e.item]||esc(e.item))+'</small>':'')+(e.transaction_id?'<div class="hm-tx">'+esc(e.transaction_id)+'</div>':'')+'</td>'+
+      '<td>'+esc(e.buyer||'—')+'</td><td style="white-space:nowrap">'+esc(e.amount||'—')+'</td>'+
+      '<td><span class="hm-st '+cls+'"><span>'+ic+'</span><span>'+esc(e.result)+'</span></span></td></tr>'}).join('')+'</tbody></table>';
+  root.querySelector('.hm-body').innerHTML=kpi+'<div class="hint" style="margin:4px 0">'+rows.length+' de '+st.events.length+' eventos'+(st.tests?'':' · pruebas ocultas')+'</div><div style="overflow:auto">'+table+'</div>';
+  root.querySelectorAll('[data-open-funnel]').forEach(a=>a.onclick=ev=>{ev.preventDefault();$('hmDlg').close();openFunnel(a.dataset.openFunnel).then(()=>setTab('pay'))});
+}
+let hmTimer=null;
+async function hmLoad(){const r=await fetch('/api/payments/events');if(!r.ok)return;const d=await r.json();
+  $('hmCount').textContent=d.events.length+' eventos en total';hmView('hmTable',d.events,true)}
+$('hmBtn').onclick=e=>{e.preventDefault();$('hmDlg').showModal();hmLoad();hmTimer=setInterval(hmLoad,5000)};
+$('hmClose').onclick=()=>$('hmDlg').close();
+$('hmDlg').addEventListener('close',()=>clearInterval(hmTimer));
+
+// ---------- demo en vivo (QR) ----------
+const LV_EV={checkout:['🛒','Fue al checkout'],checkout_cancel:['✋','Canceló en el checkout'],purchase_main:['💰','Compró el producto principal','buy'],
+  upsell_view:['⭐','Vio la oferta del upsell'],upsell_yes:['✅','Aceptó el upsell'],upsell_no:['↪️','Rechazó el upsell'],upsell_cancel:['✋','Canceló el pago del upsell'],
+  purchase_upsell:['💰','Compró el upsell','buy'],downsell_view:['🎯','Vio el downsell'],downsell_yes:['✅','Aceptó el downsell'],downsell_no:['↪️','Rechazó el downsell'],
+  downsell_cancel:['✋','Canceló el pago del downsell'],purchase_downsell:['💰','Compró el downsell','buy'],thanks_view:['🎉','Llegó a la página final'],chat_message:['💬','Preguntó al agente vendedor'],refund_main:['↩️','Reembolso del producto principal']};
+let lv={timer:null,since:0,seen:new Set(),views0:null,leads:0,buys:0};
+function lvAdd(icon,text,sub,cls){$('lvWait').hidden=true;const li=document.createElement('li');if(cls)li.className=cls;
+  li.innerHTML=icon+' <b>'+esc(text)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'');$('lvTl').prepend(li)}
+async function lvPoll(){
+  const r=await fetch('/api/landings/'+cur+'/live?since='+lv.since);if(!r.ok)return;const d=await r.json();
+  if(!lv.since)lv.since=d.now;if(lv.views0==null)lv.views0=d.views;
+  $('lvV').textContent=Math.max(0,d.views-lv.views0);$('lvUrl').textContent=d.url;$('lvDemo').checked=d.email_demo;
+  d.leads.forEach(l=>{const k='l'+l.id;if(lv.seen.has(k))return;lv.seen.add(k);lv.leads++;
+    const t=new Date(l.ts*1000).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    lvAdd('🔔','Nuevo lead: '+(l.name||'sin nombre'),l.email+' · desde '+(l.utm_source||'directo')+' · vio la variante '+l.variant+' · '+t,'lead');
+    lvAdd('📧','n8n programó su secuencia de emails',d.email_demo?'Modo demo: el primero llega en unos segundos y el resto cada minuto, con la marca del embudo.':'El primer email sale en ~1 hora (activa el modo demo para verlo ya).')});
+  d.events.forEach(e=>{const k='e'+e.id;if(lv.seen.has(k))return;lv.seen.add(k);const m=LV_EV[e.event];if(!m)return;
+    if(m[2]==='buy')lv.buys++;lvAdd(m[0],m[1],m[2]==='buy'?'La compra dispara el email de acceso al producto.':'',m[2])});
+  $('lvL').textContent=lv.leads;$('lvP').textContent=lv.buys;
+}
+$('liveBtn').onclick=()=>{if(!cur)return;
+  lv={timer:null,since:0,seen:new Set(),views0:null,leads:0,buys:0};$('lvTl').innerHTML='';$('lvWait').hidden=false;
+  $('lvQr').src='/api/landings/'+cur+'/qr.svg?t='+Date.now();$('liveDlg').showModal();
+  lvPoll();lv.timer=setInterval(lvPoll,2000)};
+$('lvClose').onclick=()=>$('liveDlg').close();
+$('liveDlg').addEventListener('close',()=>{clearInterval(lv.timer);if(cur)openFunnel(cur)});
+$('lvDemo').onchange=async e=>{const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({email_demo:e.target.checked})});
+  if(r.ok)$('demoMode').checked=e.target.checked;else e.target.checked=!e.target.checked};
+
+// ---------- emails ----------
+let mails=[],mi=0,mTimer=null;
+const MF={dia:['Dia de envio','number','Dias despues del registro. Aplica a los leads nuevos.'],asunto:['Asunto','text',''],
+  objetivo:['Texto previo (lo que se ve junto al asunto en Gmail)','text',''],titulo:['Titulo dentro del email','text',''],
+  cuerpo:['Texto','area','Un parrafo por linea.'],boton:['Texto del boton','text','']};
+async function renderMails(){
+  const dv=det.delivery||{};
+  $('mails').innerHTML='<div class="card"><h3>Editar emails</h3><span class="hint">Los textos se leen justo antes de cada envio: los cambios tambien llegan a los emails que n8n ya tiene programados.</span>'+
+    '<div class="mlist" id="mList"></div><div class="mailed"><div class="col" style="gap:8px" id="mForm"></div>'+
+    '<div class="col" style="gap:6px"><div class="subj" id="mSubj"></div><iframe class="mprev" id="mPrev" title="Vista previa del email" sandbox></iframe></div></div></div>'+
+    '<div class="card" style="margin-top:12px"><h3>Lo que recibe al comprar</h3><span class="hint">Link de acceso por producto (Notion, Hotmart, Drive). Vacio = pagina de acceso de ejemplo con la marca del embudo.</span>'+
+    [['main','Producto principal'],['upsell','Upsell'],['downsell','Downsell']].map(([k,l])=>'<label for="dv_'+k+'">'+l+'</label><input id="dv_'+k+'" type="url" value="'+esc(dv[k]||'')+'" placeholder="https://...">').join('')+
+    '<button class="sec" id="dvSave">Guardar accesos</button></div>';
+  $('dvSave').onclick=async()=>{const body={main:$('dv_main').value.trim(),upsell:$('dv_upsell').value.trim(),downsell:$('dv_downsell').value.trim()};
+    const r=await fetch('/api/landings/'+cur+'/delivery',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    $('status').textContent=r.ok?'Accesos guardados: los proximos emails de compra ya los usan.':'Error: '+(await r.json()).detail};
+  const r=await fetch('/api/landings/'+cur+'/emails');mails=r.ok?(await r.json()).emails:[];mi=0;
+  if(!mails.length){$('mForm').innerHTML='<span class="hint">Este embudo no tiene emails (es una landing antigua: usa Optimizar).</span>';return}
+  drawMailList();drawMailForm();
+}
+function drawMailList(){
+  let g='';$('mList').innerHTML=mails.map((m,i)=>(m.group!==g?((g=m.group),'<small class="hint" style="width:100%;margin-top:4px">'+esc(g)+'</small>'):'')+
+    '<button data-i="'+i+'" aria-pressed="'+(i===mi)+'">'+esc(m.label)+'</button>').join('');
+  $('mList').querySelectorAll('button').forEach(b=>b.onclick=()=>{mi=+b.dataset.i;drawMailList();drawMailForm()});
+}
+function drawMailForm(){
+  const m=mails[mi],f=m.fields;
+  $('mForm').innerHTML=Object.keys(f).map(k=>{const [l,t,h]=MF[k];const id='mf_'+k;
+      return '<label for="'+id+'">'+l+'</label>'+(t==='area'?'<textarea id="'+id+'" rows="10">'+esc(f[k])+'</textarea>':
+      '<input id="'+id+'" type="'+t+'"'+(t==='number'?' min="0" max="60" step="0.5"':'')+' value="'+esc(f[k])+'">')+(h?'<small class="hint">'+h+'</small>':'')}).join('')+
+    (m.kind!=='recovery'?'<small class="hint">Usa <b>{nombre}</b> y <b>{producto}</b>: se reemplazan al enviar. Deja un campo vacio para volver al texto original.</small>':'')+
+    '<div class="row-actions"><button class="sec" id="mSave">Guardar email</button><span class="hint" id="mState"></span></div>';
+  Object.keys(f).forEach(k=>$('mf_'+k).oninput=()=>{$('mState').textContent='Sin guardar';clearTimeout(mTimer);mTimer=setTimeout(previewMail,350)});
+  $('mSave').onclick=saveMail;previewMail();
+}
+function mailBody(){const m=mails[mi],b={kind:m.kind,n:m.n};
+  Object.keys(m.fields).forEach(k=>{const v=$('mf_'+k).value;b[k]=k==='dia'?(v===''?null:+v):v});return b}
+async function previewMail(){
+  const r=await fetch('/api/landings/'+cur+'/emails/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mailBody())});
+  if(!r.ok){$('mSubj').textContent='Vista previa no disponible: '+((await r.json()).detail||'');return}
+  const d=await r.json();$('mSubj').innerHTML='<b>Asunto:</b> '+esc(d.subject);$('mPrev').srcdoc=d.html;
+}
+async function saveMail(){
+  $('mSave').disabled=true;
+  try{const r=await fetch('/api/landings/'+cur+'/emails',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(mailBody())});
+    const d=await r.json();if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:'Revisa los campos');
+    mails=d.emails;$('mState').textContent='Guardado ✓';$('status').textContent='Email guardado: los proximos envios ya usan este texto.';drawMailList()}
+  catch(e){$('mState').textContent='Error: '+e.message}finally{$('mSave').disabled=false}
+}
+
+// ---------- pagos ----------
+function renderPays(){
+  const ck=det.checkout||{},base=det.url.replace(/\/p\/.*/,'');
+  $('pays').innerHTML='<div class="card"><h3>Links de pago</h3><span class="hint">Pega el link de Stripe o Hotmart de cada producto. En la plataforma de pago, configura como "URL de exito" la que aparece debajo: asi se registra la compra y el cliente sigue al siguiente paso. Vacio = checkout de demostracion.</span>'+
+    [['main','Producto principal'],['upsell','Upsell'],['downsell','Downsell']].map(([k,l])=>'<label for="pay_'+k+'">'+l+'</label><input id="pay_'+k+'" type="url" value="'+esc(ck[k]||'')+'" placeholder="Vacio = checkout de demostracion">'+
+    '<small>URL de exito: <code>'+esc(base)+'/go/'+cur+'/paid-'+k+'</code></small>').join('')+'<button class="sec" id="paySave">Guardar links</button></div>'+
+    '<div class="card" style="margin-top:12px"><h3>🔒 Hotmart: webhook de esta landing</h3><span class="hint">En Hotmart → Herramientas → Webhook, crea una configuracion para el producto de esta landing (version 2.0.0) con esta URL. Cada landing tiene la suya: asi cada evento se asocia a su embudo aunque el comprador llegue directo a Hotmart.</span>'+
+    '<code class="cp" id="hmUrl">'+esc(base)+'/api/webhooks/hotmart/'+cur+'</code><div class="row-actions"><button class="ghost" id="hmCopy">Copiar URL</button>'+
+    '<small class="hint">Eventos: compra aprobada y completa, reembolso, contracargo, cancelacion, abandono de carrito. La compra solo cuenta cuando Hotmart la confirma; el reembolso corta el acceso.</small></div></div>'+
+    '<div class="card" style="margin-top:12px"><h3>Eventos de Hotmart de esta landing</h3><div id="payEvents"><span class="hint">Cargando…</span></div></div>'+
+    '<div class="card" style="margin-top:12px"><h3>Stripe</h3><small class="hint">Developers → Webhooks, evento checkout.session.completed: <code>'+esc(base)+'/api/webhooks/stripe</code> (variable STRIPE_WEBHOOK_SECRET).</small></div>';
+  $('hmCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('hmUrl').textContent);$('status').textContent='URL del webhook copiada.'}catch(_){$('status').textContent='Selecciona la URL y copiala.'}};
+  delete hmState.payEvents;fetch('/api/payments/events?slug='+cur).then(r=>r.ok?r.json():{events:[]}).then(d=>hmView('payEvents',d.events,false));
+  $('paySave').onclick=async()=>{const body={main:$('pay_main').value.trim(),upsell:$('pay_upsell').value.trim(),downsell:$('pay_downsell').value.trim()};
+    const r=await fetch('/api/landings/'+cur+'/checkout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    $('status').textContent=r.ok?'Links de pago guardados.':'Error: '+(await r.json()).detail};
+}
+
+// ---------- generar ----------
+$('go').onclick=async()=>{
+  const prompt=$('p').value.trim();
+  if(prompt.length<10){$('status').textContent='Escribe al menos una frase describiendo el producto.';return}
+  const fd=new FormData();fd.append('prompt',prompt);fd.append('tono',$('tono').value);fd.append('framework',$('fw').value);fd.append('whatsapp',$('wa').value);
+  fd.append('checkout_main',$('ckM').value.trim());fd.append('checkout_upsell',$('ckU').value.trim());fd.append('checkout_downsell',$('ckD').value.trim());
+  if($('usePal').checked){fd.append('color1',$('c1').value);fd.append('color2',$('c2').value);fd.append('color3',$('c3').value)}
+  if($('logo').files[0])fd.append('logo',$('logo').files[0]);
+  [...$('imgs').files].slice(0,4).forEach(f=>fd.append('imagenes',f));
+  $('go').disabled=true;
+  try{const r=await fetch('/api/generate',{method:'POST',body:fd});const d=await r.json();
+    if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:'Revisa los campos del formulario');
+    const j=await follow(d.job,'El equipo de agentes esta construyendo el embudo');
+    if(j.status==='done'){$('status').textContent='Listo.';await loadList();await openFunnel(j.result.slug)}}
+  catch(e){$('status').textContent='Error: '+e.message}finally{$('go').disabled=false}
+};
+
+// ---------- optimizador ----------
+let chat=[],chatFor=null;
+function renderChat(steps){
+  $('chatLog').innerHTML=(chat.length||steps?'':'<div class="chatempty">Prueba una de las preguntas sugeridas.</div>')+
+    chat.map(m=>'<div class="msg '+m.role+'">'+esc(m.content)+'</div>').join('')+(steps||'');
+  $('chatLog').scrollTop=$('chatLog').scrollHeight}
+async function sendChat(text){
+  text=(text||'').trim();if(!cur||!text)return;
+  chat.push({role:'user',content:text});$('chatIn').value='';$('chatSend').disabled=true;renderChat('<div class="msg step">🤖 pensando...</div>');
+  try{const r=await fetch('/api/landings/'+cur+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chat.slice(-20)})});
+    const d=await r.json();if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:'No se pudo enviar');
+    let j;
+    while(true){const q=await fetch('/api/jobs/'+d.job);j=await q.json();if(!q.ok)throw new Error(j.detail);
+      const steps=j.trace.filter(t=>['tool','done','warn','check'].includes(t.kind)&&t.agent).map(t=>'<div class="msg step">'+
+        (t.kind==='tool'?'🔧 ':t.kind==='warn'?'⚠️ ':t.kind==='check'?'🎯 ':'✅ ')+esc(t.text)+'</div>').join('');
+      renderChat(steps+(j.status==='running'?'<div class="msg step">🤖 trabajando... '+j.elapsed.toFixed(0)+' s</div>':''));
+      if(j.status!=='running')break;await sleep(1000)}
+    if(j.status==='error')throw new Error(j.error);
+    chat.push({role:'assistant',content:j.result.reply});renderChat('<div class="msg step">'+usd(j.usage.usd)+' · '+j.usage.calls+' llamadas</div>');
+    if(j.result.changed){await loadList();const keep=chat;await openFunnel(cur);chat=keep;setTab('opt');renderChat()}}
+  catch(e){chat.pop();renderChat('<div class="msg step">⚠️ '+esc(e.message)+'</div>')}
+  finally{$('chatSend').disabled=false}
+}
+$('chatSend').onclick=()=>sendChat($('chatIn').value);
+$('chatIn').onkeydown=e=>{if(e.key==='Enter')sendChat($('chatIn').value)};
+$('chatChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>sendChat(b.textContent));
+
+window.addEventListener('focus',()=>{if(cur&&tab==='prev'&&(curStep==='A'||curStep==='B'))setStep(curStep)});
+loadList().then(()=>{const h=decodeURIComponent(location.hash.slice(1));if(h&&rows.some(x=>x.slug===h))openFunnel(h)});
+</script></body></html>

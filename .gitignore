@@ -1,0 +1,25 @@
+# Secretos
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Datos generados en tiempo de ejecucion (en produccion viven en DATA_DIR=/data)
+pages/
+stats.json
+leads.jsonl
+
+# Binarios descargados
+*.deb
+
+# Restos de copiar archivos desde Windows
+*:Zone.Identifier
+landing_agent.db*
+
+# Respaldo local de la version 1 (no forma parte del proyecto)
+files/
+
+# Copias de "Deshacer" y variantes generadas
+*.prev.html
